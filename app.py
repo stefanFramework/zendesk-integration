@@ -1,79 +1,43 @@
-import requests
+import os
 
+from dotenv import load_dotenv
 
-subdomain = 'fairplay9941'
-user = 'codesaljones@gmail.com' + '/token'
-password = 'wLPLp51AIhoU7aA7rnDuJebw3vd8dXIrFClAAWAb'
+from zendesk import ZendeskIntegrationService
 
-base_url = f'https://{subdomain}.zendesk.com/api/v2'
+load_dotenv()
 
-def create_ticket():
-    url = base_url + '/tickets'
+subdomain = os.getenv('ZENDESK_DOMAIN')
+user = os.getenv('ZENDESK_USER')
+password = os.getenv('ZENDESK_PASSWORD')
 
-    ticket_data = {
-        'ticket': {
-            'subject': 'Ejemplo de integración',
-            'comment': {
-                'body': 'Este es un ejemplo de creación de un ticket desde Python'
-            },
-            'requester': {
-                'name': 'John Doe',
-                'email': 'johndoe@example.com'
-            }
-        }
-    }
-
-    creation_response = requests.post(url, auth=(user, password), json=ticket_data)
-
-    if creation_response.status_code != 201:
-        print('Unable to create ticket')
-    else:
-        print('Ticket created successfully')
-
-def list_tickets():
-    url = base_url + '/tickets'
-    response = requests.get(url, auth=(user, password))
-
-    if response.status_code != 200:
-        print('Status:', response.status_code, 'Problem with the request. Exiting.')
-        exit()
-
-    data = response.json()
-
-    tickets = ['{0}: {1}'.format(ticket['id'],ticket['subject']) for ticket in data['tickets']]
-
-    print(str(tickets))
-
-def respond():
-    url = base_url + '/tickets/1'
-    comment_data = {
-        'ticket': {
-            'comment': {
-                'body': 'Esta es una respuesta random 2 al ticket desde Python'
-            }
-        }
-    }
-
-    creation_response = requests.put(url, auth=(user, password), json=comment_data)
-
-    if creation_response.status_code != 200:
-        print('Unable to create comment')
-    else:
-        print('Comment created successfully')
+service = ZendeskIntegrationService(
+    subdomain,
+    user, 
+    password
+)
 
 while True:
     command = input('Command: ')        
         
     if command == 'list':
-        list_tickets()
+        print(service.list_tickets())
         continue
 
     if command == 'create':
-        create_ticket()
+        subject = input('Subject: ')
+        body = input('Body: ')
+        service.create_ticket(subject=subject, body=body)
+        continue
+
+    if command == 'get':
+        ticket_id = input('Ticket ID: ')
+        print(service.get_ticket(ticket_id))
         continue
 
     if command == 'respond':
-        respond()
+        ticket_id = input('Ticket ID: ')
+        comment = input('Comment: ')
+        service.add_comment(ticket_id, comment)
         continue
 
     if command == 'exit':
